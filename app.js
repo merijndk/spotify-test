@@ -7,10 +7,15 @@
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
 
-var express = require('express'); // Express web server framework
+var express = require("express");
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+
 var request = require('request'); // "Request" library
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
+
 
 var client_id = 'b4a3e754179d4a72804b8084bcf144ab'; // Your client id
 var client_secret = 'c1984bdb4c784ad3b10fe6f4370a027e'; // Your secret
@@ -33,7 +38,14 @@ var generateRandomString = function(length) {
 
 var stateKey = 'spotify_auth_state';
 
-var app = express();
+io.on('connection', function(socket){
+    console.log('a user connected');
+
+    socket.on('disconnect', function(){
+        console.log('user disconnected');
+    });
+});
+
 
 app.use(express.static(__dirname + '/public'))
    .use(cookieParser());
@@ -47,7 +59,7 @@ app.get('/login', function(req, res) {
   var scope = 'user-read-private user-read-email user-modify-playback-state';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
-      show_dialog: true,
+      show_dialog: false,
       response_type: 'code',
       client_id: client_id,
       scope: scope,
@@ -142,5 +154,6 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 
-console.log('Listening on 8888');
-app.listen(8888);
+http.listen(8888, function(){
+    console.log('listening on *:3000');
+});
